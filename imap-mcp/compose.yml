@@ -1,0 +1,48 @@
+name: peh-mail-mcp
+
+services:
+  mail-mcp:
+    image: ${MAIL_MCP_IMAGE:-peh-mail-mcp:0.2.0}
+    build: .
+    restart: unless-stopped
+    environment:
+      MCP_TRANSPORT: http
+      MCP_LISTEN_ADDR: :8080
+      MCP_PUBLIC_HOST: ${MAIL_MCP_DOMAIN:?Set MAIL_MCP_DOMAIN}
+      MCP_AUTH_TOKEN: ${MCP_AUTH_TOKEN:?Set MCP_AUTH_TOKEN}
+      IMAP_SERVER: ${IMAP_SERVER:?Set IMAP_SERVER}
+      EMAIL_ADDRESS: ${EMAIL_ADDRESS:?Set EMAIL_ADDRESS}
+      EMAIL_PASSWORD: ${EMAIL_PASSWORD:?Set EMAIL_PASSWORD}
+      EMAIL_DRAFTS_FOLDER: ${EMAIL_DRAFTS_FOLDER:-}
+    networks:
+      - peh
+    labels:
+      traefik.enable: 'true'
+      traefik.docker.network: peh
+      traefik.http.routers.peh-mail-mcp.rule: Host(`${MAIL_MCP_DOMAIN:?}`) && (Path(`/`) || Path(`/mcp`))
+      traefik.http.routers.peh-mail-mcp.entrypoints: websecure
+      traefik.http.routers.peh-mail-mcp.tls.certresolver: letsencrypt
+      traefik.http.routers.peh-mail-mcp.middlewares: secure-headers@file,peh-mail-mcp-limit
+      traefik.http.routers.peh-mail-mcp.service: peh-mail-mcp
+      traefik.http.services.peh-mail-mcp.loadbalancer.server.port: '8080'
+      traefik.http.middlewares.peh-mail-mcp-limit.inflightreq.amount: '8'
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, http://127.0.0.1:8080/healthz]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: 20m
+
+networks:
+  peh:
+    external: true
+    name: peh
