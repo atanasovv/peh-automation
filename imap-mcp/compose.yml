@@ -2,7 +2,7 @@ name: peh-mail-mcp
 
 services:
   mail-mcp:
-    image: ${MAIL_MCP_IMAGE:-peh-mail-mcp:0.2.0}
+    image: ${MAIL_MCP_IMAGE:-ghcr.io/atanasovv/peh-mail-mcp:latest}
     build: .
     restart: unless-stopped
     environment:

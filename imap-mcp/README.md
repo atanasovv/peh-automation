@@ -94,3 +94,26 @@ healthcheck. Traefik маршрутизира `/` и съвместимия ад
 go test ./...
 go build -trimpath -o superhosting-mail.exe .
 ```
+
+## GitHub Container Registry
+
+Workflow файлът в корена на хранилището, `.github/workflows/publish-image.yml`,
+първо изпълнява тестовете и проверката на Go кода, след което компилира образ
+за Linux amd64 и arm64.
+
+При push към `main` публикува `ghcr.io/atanasovv/peh-mail-mcp:latest` и
+tag с commit SHA. При push на Git tag като `v0.2.0` публикува image tags
+`0.2.0`, `0.2` и SHA. Може да се стартира ръчно от GitHub Actions.
+При pull request проверява компилирането, като публикуването е изключено.
+Удостоверяването към GHCR използва автоматичния `GITHUB_TOKEN`.
+
+За деплойване с публикувания образ, от директорията `imap-mcp`:
+
+```sh
+docker compose pull
+docker compose up -d --no-build
+```
+
+В Arcane задай `MAIL_MCP_IMAGE=ghcr.io/atanasovv/peh-mail-mcp:latest` или
+конкретен публикуван version/SHA tag. Ако пакетът в GitHub е private,
+настрой GHCR удостоверяването на сървъра с права за четене на пакета.
